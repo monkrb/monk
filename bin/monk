@@ -1,0 +1,38 @@
+#! /usr/bin/env ruby
+
+require "thor"
+
+class Monk < Thor
+  include Thor::Actions
+
+  desc "init", "Initialize a Monk application"
+  def init(target)
+    system "git clone -q --depth 1 #{source} #{target}"
+  end
+
+private
+
+  def source
+    monk_config["default"]
+  end
+
+  def monk_config_file
+    @monk_config_file ||= File.join(Thor::Util.user_home, ".monk")
+  end
+
+  def monk_config
+    @monk_config ||= begin
+      write_monk_config_file unless File.exists?(monk_config_file)
+      @monk_config = YAML.load(monk_config_file)
+    end
+  end
+
+  def write_monk_config_file
+    create_file monk_config_file do
+      config = { "default" => "git://github.com/monkrb/skeleton.git" }
+      config.to_yaml
+    end
+  end
+end
+
+Monk.start
