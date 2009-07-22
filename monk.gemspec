@@ -11,5 +11,9 @@ Gem::Specification.new do |s|
 
   s.executables << "monk"
 
-  s.files = ["README.markdown", "Rakefile", "bin/monk", "lib/monk.rb", "monk.gemspec", "test/integration_test.rb"]
+  s.add_dependency("wycats-thor", "~> 0.11")
+  s.add_dependency("dependencies", ">= 0.0.4")
+  s.requirements << "git"
+
+  s.files = ["README.markdown", "Rakefile", "bin/monk", "lib/monk/logger.rb", "lib/monk/reloader.rb", "lib/monk/settings.rb", "lib/monk.rb", "monk.gemspec", "test/integration_test.rb", "test/sinatra_test.rb"]
 end

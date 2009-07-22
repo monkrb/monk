@@ -11,6 +11,10 @@ Gem::Specification.new do |s|
 
   s.executables << "monk"
 
+  s.add_dependency("wycats-thor", "~> 0.11")
+  s.add_dependency("dependencies", ">= 0.0.4")
+  s.requirements << "git"
+
   s.files = <%= Dir[
     "LICENSE",
     "README*",
