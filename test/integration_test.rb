@@ -22,14 +22,8 @@ class TestMonk < Test::Unit::TestCase
         FileUtils.rm_rf("monk-test")
 
         out, err = monk("init monk-test")
-
-        Dir.chdir("monk-test") do
-          FileUtils.rm_rf(".git")
-
-          # TODO Try once the repository contains a proper skeleton.
-          # system("rake")
-          # assert_equal 0, $?
-        end
+        assert out[/create.* monk-test/]
+        assert !File.directory?("monk-test/.git")
       end
     end
   end

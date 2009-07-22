@@ -10,6 +10,7 @@ class MonkTasks < Thor
   desc "init", "Initialize a Monk application"
   def init(target)
     system "git clone --depth 1 #{source} #{target}"
+    inside(target) { remove_file ".git" }
     say_status :create, target
   end
 
