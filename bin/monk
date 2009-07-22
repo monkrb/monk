@@ -9,7 +9,8 @@ class MonkTasks < Thor
 
   desc "init", "Initialize a Monk application"
   def init(target)
-    system "git clone --depth 1 #{source} #{target}"
+    say_status :fetching, source
+    system "git clone -q --depth 1 #{source} #{target}"
     inside(target) { remove_file ".git" }
     say_status :create, target
   end
@@ -36,6 +37,10 @@ private
       config = { "default" => "git://github.com/monkrb/skeleton.git" }
       config.to_yaml
     end
+  end
+
+  def self.source_root
+    "."
   end
 end
 
