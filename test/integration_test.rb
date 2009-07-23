@@ -17,13 +17,30 @@ class TestMonk < Test::Unit::TestCase
       [out, err]
     end
 
+    def sh(cmd)
+      # puts cmd
+      %x{#{cmd}}
+    end
+
     should "create a skeleton app with all tests passing" do
       Dir.chdir("/tmp") do
         FileUtils.rm_rf("monk-test")
 
         out, err = monk("init monk-test")
         assert out[/create.* monk-test/]
-        assert !File.directory?("monk-test/.git")
+
+        Dir.chdir("monk-test") do
+          assert !File.directory?(".git")
+
+          FileUtils.cp("config/settings.example.yml", "config/settings.yml")
+          FileUtils.cp("config/redis/test.example.conf", "config/redis/test.conf")
+
+          assert sh("redis-server config/redis/test.conf")
+
+          sh "dep vendor glue"
+
+          assert sh("rake")
+        end
       end
     end
   end
