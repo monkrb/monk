@@ -1,56 +1,51 @@
-# This file contains the bootstraping code for a Monk application.
-RACK_ENV = ENV["RACK_ENV"] ||= "development" unless defined? RACK_ENV
+#! /usr/bin/env ruby
 
-# Helper method for file references.
-#
-# @param args [Array] Path components relative to ROOT_DIR.
-# @example Referencing a file in config called settings.yml:
-#   root_path("config", "settings.yml")
-def root_path(*args)
-  File.join(ROOT_DIR, *args)
-end
+require "thor"
 
-require "sinatra/base"
-require "haml"
-require "sass"
+class Monk < Thor
+  include Thor::Actions
 
-# TODO Add documentation.
-class Monk < Sinatra::Base
-  set :dump_errors, true
-  set :logging, true
-  set :methodoverride, true
-  set :raise_errors, Proc.new { test? }
-  set :root, root_path
-  set :run, Proc.new { $0 == app_file }
-  set :show_exceptions, Proc.new { development? }
-  set :static, true
-  set :views, root_path("app", "views")
-
-  use Rack::Session::Cookie
-
-  configure :development do
-    use Sinatra::Reloader
+  desc "init", "Initialize a Monk application"
+  def init(target)
+    clone(source, target)
+    cleanup(target)
   end
 
-  configure :development, :test do
-    require "ruby-debug" rescue LoadError
+private
+
+  def clone(source, target)
+    say_status :fetching, source
+    system "git clone -q --depth 1 #{source} #{target}"
   end
 
-  helpers do
+  def cleanup(target)
+    inside(target) { remove_file ".git" }
+    say_status :create, target
+  end
 
-    # TODO Add documentation.
-    def haml(template, options = {}, locals = {})
-      options[:escape_html] = true unless options.include?(:escape_html)
-      super(template, options, locals)
-    end
+  def source
+    monk_config["default"]
+  end
 
-    # TODO Add documentation.
-    def partial(template, locals = {})
-      haml(template, {:layout => false}, locals)
+  def monk_config_file
+    @monk_config_file ||= File.join(Thor::Util.user_home, ".monk")
+  end
+
+  def monk_config
+    @monk_config ||= begin
+      write_monk_config_file unless File.exists?(monk_config_file)
+      @monk_config = YAML.load_file(monk_config_file)
     end
   end
-end
 
-require "monk/reloader"
-require "monk/logger"
-require "monk/settings"
+  def write_monk_config_file
+    create_file monk_config_file do
+      config = { "default" => "git://github.com/monkrb/skeleton.git" }
+      config.to_yaml
+    end
+  end
+
+  def self.source_root
+    "."
+  end
+end

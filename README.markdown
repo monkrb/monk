@@ -8,7 +8,7 @@ Description
 
 Monk is a glue framework for web development. It means that instead of
 installing all the tools you need for your projects, you can rely on a
-git repository and a list of dependencies, and Monk will care of the
+git repository and a list of dependencies, and Monk takes care of the
 rest. By default, it ships with a Sinatra application that includes
 Contest, Stories, Webrat, Ohm and some other niceties, along with a
 structure and helpful documentation to get your hands wet in no time.
@@ -28,7 +28,7 @@ Install the monk gem and create your project:
     $ cd myapp
     $ rake
 
-If the tests pass, it means that you can start hacking righ away. If
+If the tests pass, it means that you can start hacking right away. If
 they don't, just follow the instructions. As the default skeleton
 is very opinionated, you will probably need to install and run
 [Redis](http://code.google.com/p/redis/), a key-value database.
