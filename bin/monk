@@ -9,13 +9,21 @@ class MonkTasks < Thor
 
   desc "init", "Initialize a Monk application"
   def init(target)
-    say_status :fetching, source
-    system "git clone -q --depth 1 #{source} #{target}"
-    inside(target) { remove_file ".git" }
-    say_status :create, target
+    clone(source, target)
+    cleanup(target)
   end
 
 private
+
+  def clone(source, target)
+    say_status :fetching, source
+    system "git clone -q --depth 1 #{source} #{target}"
+  end
+
+  def cleanup(target)
+    inside(target) { remove_file ".git" }
+    say_status :create, target
+  end
 
   def source
     monk_config["default"]
