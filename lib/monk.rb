@@ -11,6 +11,30 @@ class Monk < Thor
     cleanup(target)
   end
 
+  desc "show NAME", "Display the repository address for NAME"
+  def show(name)
+    say_status name, source(name) || "repository not found"
+  end
+
+  desc "list", "Lists the configured repositories"
+  def list
+    monk_config.keys.sort.each do |key|
+      show(key)
+    end
+  end
+
+  desc "add NAME REPOSITORY", "Add the repository to the configuration file"
+  def add(name, repository)
+    monk_config[name] = repository
+    write_monk_config_file
+  end
+
+  desc "rm NAME", "Remove the repository from the configuration file"
+  def rm(name)
+    monk_config.delete(name)
+    write_monk_config_file
+  end
+
 private
 
   def clone(source, target)
@@ -23,8 +47,8 @@ private
     say_status :create, target
   end
 
-  def source
-    monk_config["default"]
+  def source(name = "default")
+    monk_config[name]
   end
 
   def monk_config_file
@@ -39,8 +63,9 @@ private
   end
 
   def write_monk_config_file
+    remove_file monk_config_file
     create_file monk_config_file do
-      config = { "default" => "git://github.com/monkrb/skeleton.git" }
+      config = @monk_config || { "default" => "git://github.com/monkrb/skeleton.git" }
       config.to_yaml
     end
   end
