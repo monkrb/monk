@@ -46,7 +46,8 @@ module Test::Commands
   end
 
   def suspects(port)
-    sh("lsof -i :#{port}").first.split("\n")[1..-1].map {|s| s[/^.+? (\d+)/, 1] }
+    list = sh("lsof -i :#{port}").first.split("\n")[1..-1] || []
+    list.map {|s| s[/^.+? (\d+)/, 1] }
   end
 
   def silence_stream(stream)

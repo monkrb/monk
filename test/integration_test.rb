@@ -29,11 +29,15 @@ class TestMonk < Test::Unit::TestCase
     end
 
     def test_server(cmd, port)
+      binary = cmd[/^(.+?)( |$)/, 1]
+
+      flunk "Can't find `#{binary}`." unless system("which #{binary} > /dev/null")
+
+      kill_suspects(port)
       sh_bg(cmd)
 
-      if wait_for_service("0.0.0.0", port)
-        @ports_to_close << port
-      end
+      # Mark the port for closing on teardown, just in case the build fails.
+      @ports_to_close << port if wait_for_service("0.0.0.0", port)
 
       doc = Hpricot(sh("curl 0.0.0.0:#{port}").first)
 
@@ -57,7 +61,7 @@ class TestMonk < Test::Unit::TestCase
         FileUtils.rm_rf("monk-test")
 
         out, err = monk("init monk-test")
-        assert out[/create.* monk-test/]
+        assert_match /create.* monk-test/, out
 
         Dir.chdir("monk-test") do
           assert !File.directory?(".git")
@@ -66,24 +70,38 @@ class TestMonk < Test::Unit::TestCase
           FileUtils.cp("config/redis/development.example.conf", "config/redis/development.conf")
           FileUtils.cp("config/redis/test.example.conf", "config/redis/test.conf")
 
+          # Load Redis.
           sh "redis-server config/redis/test.conf"
           wait_for_service("0.0.0.0", 6380)
-
-          sh "dep vendor monk-glue"
-
-          assert sh("rake")
 
           sh "redis-server config/redis/development.conf"
           wait_for_service("0.0.0.0", 6379)
 
+          # Vendor missing dependencies.
+          sh "dep vendor monk-glue"
+
+          assert sh("rake"), "the build didn't pass."
+          assert sh("rake1.9"), "the build didn't pass under Ruby 1.9."
+
           test_server "ruby init.rb", 4567
           test_server "rackup", 9292
+
+          test_server "ruby1.9 init.rb", 4567
+          test_server "rackup1.9", 9292
         end
       end
     end
 
+    def kill_suspects(port)
+      list = suspects(port)
+
+      sh "kill -9 #{list.join(" ")}" unless list.empty?
+    end
+
     teardown do
-      sh "kill #{@ports_to_close.map {|p| suspects(p) }.flatten.join(" ")}" unless @ports_to_close.empty?
+      @ports_to_close.each do |port|
+        kill_suspects port
+      end
     end
   end
 
