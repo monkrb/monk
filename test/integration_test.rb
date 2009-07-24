@@ -3,10 +3,11 @@ require "contest"
 require "open3"
 require "socket"
 
-BINARY = File.expand_path(File.join(File.dirname(__FILE__), "..", "bin", "monk"))
-TMP = File.expand_path(File.join(File.dirname(__FILE__), "tmp"))
-
 class TestMonk < Test::Unit::TestCase
+  def root(*args)
+    File.expand_path(File.join(File.dirname(__FILE__), "..", *args))
+  end
+
   def sh(cmd)
     out, err = nil
 
@@ -17,9 +18,9 @@ class TestMonk < Test::Unit::TestCase
 
     [out, err]
   end
-    
+
   def monk(args = nil)
-    sh("ruby -rubygems #{BINARY} #{args}")
+    sh("ruby -rubygems #{root "bin/monk"} #{args}")
   end
 
   context "monk init" do
@@ -48,10 +49,10 @@ class TestMonk < Test::Unit::TestCase
     should "create a skeleton app with all tests passing" do
       if listening?("0.0.0.0", 4567)
         suspects = sh("lsof -i :4567").first.split("\n")[1..-1].map {|s| s[/^.+?(\d+)/, 1] }
-        flunk "There is another server running on 0.0.0.0:4567. Suspect PIDs are: #{suspects.join(", ")}"
+        flunk "There is another server running on 0.0.0.0:4567. Suspect PIDs: #{suspects.join(", ")}"
       end
 
-      Dir.chdir(TMP) do
+      Dir.chdir(root("tmp")) do
         FileUtils.rm_rf("monk-test")
 
         out, err = monk("init monk-test")
