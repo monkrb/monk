@@ -28,7 +28,7 @@ class TestMonk < Test::Unit::TestCase
       assert_match /200 OK/, sh("curl -I 0.0.0.0:4567#{url}").first.split("\n").first
     end
 
-    def test_server(cmd, port)
+    def try_server(cmd, port)
       binary = cmd[/^(.+?)( |$)/, 1]
 
       flunk "Can't find `#{binary}`." unless system("which #{binary} > /dev/null")
@@ -77,18 +77,36 @@ class TestMonk < Test::Unit::TestCase
           sh "redis-server config/redis/development.conf"
           wait_for_service("0.0.0.0", 6379)
 
-          # Vendor missing dependencies.
-          sh "dep vendor monk-glue"
-
           assert sh("rake"), "the build didn't pass."
           assert sh("rake1.9"), "the build didn't pass under Ruby 1.9."
 
-          test_server "ruby init.rb", 4567
-          test_server "rackup", 9292
+          try_server "ruby init.rb", 4567
+          try_reloading
+          try_server "rackup", 9292
 
-          test_server "ruby1.9 init.rb", 4567
-          test_server "rackup1.9", 9292
+          try_server "ruby1.9 init.rb", 4567
+          try_reloading
+          try_server "rackup1.9", 9292
         end
+      end
+    end
+
+    def try_reloading
+      gsub_file("app/routes/home.rb", "haml :home", "'Goodbye'") do
+        sleep 0.2
+        assert_match /Goodbye/, sh("curl 0.0.0.0:4567").first
+      end
+    end
+
+    def gsub_file(file, *args)
+      old = File.read(file)
+
+      begin
+        new = old.gsub(*args)
+        File.open(file, "w") {|f| f.write(new) }
+        yield
+      ensure
+        File.open(file, "w") {|f| f.write(old) }
       end
     end
 
