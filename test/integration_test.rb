@@ -1,25 +1,18 @@
 require "rubygems"
 require "contest"
-require "open3"
-require "socket"
 require "hpricot"
 
 ROOT = File.expand_path(File.join(File.dirname(__FILE__), ".."))
 
+$:.unshift ROOT
+
+require "test/commands"
+
 class TestMonk < Test::Unit::TestCase
+  include Test::Commands
+
   def root(*args)
     File.join(ROOT, *args)
-  end
-
-  def sh(cmd)
-    out, err = nil
-
-    Open3.popen3(cmd) do |_in, _out, _err|
-      out = _out.read
-      err = _err.read
-    end
-
-    [out, err]
   end
 
   def monk(args = nil)
@@ -27,40 +20,38 @@ class TestMonk < Test::Unit::TestCase
   end
 
   context "monk init" do
-    def listening?(host, port)
-      begin
-        socket = TCPSocket.new(host, port)
-        socket.close unless socket.nil?
-        true
-      rescue Errno::ECONNREFUSED,
-             Errno::EBADF,           # Windows
-             Errno::EADDRNOTAVAIL    # Windows
-        false
-      end
-    end
-
-    def wait_for_service(host, port, timeout = 5)
-      start_time = Time.now
-
-      until listening?(host, port)
-        if timeout && (Time.now > (start_time + timeout))
-          raise SocketError.new("Socket did not open within #{timeout} seconds")
-        end
-      end
-
-      true
-    end
-
-    def suspects(port)
-      sh("lsof -i :#{port}").first.split("\n")[1..-1].map {|s| s[/^.+?(\d+)/, 1] }
+    setup do
+      @ports_to_close = []
     end
 
     def assert_url(url)
       assert_match /200 OK/, sh("curl -I 0.0.0.0:4567#{url}").first.split("\n").first
     end
 
+    def test_server(cmd, port)
+      sh_bg(cmd)
+
+      if wait_for_service("0.0.0.0", port)
+        @ports_to_close << port
+      end
+
+      doc = Hpricot(sh("curl 0.0.0.0:#{port}").first)
+
+      assert_match /Hello, world/, doc.at("body").inner_text
+
+      # Make sure all referenced URLs in the layout respond correctly.
+      doc.search("//*[@href]").each do |node|
+        assert_url node.attributes["href"]
+      end
+
+      doc.search("//*[@src]").each do |node|
+        assert_url node.attributes["src"]
+      end
+    end
+
     should "create a skeleton app with all tests passing" do
       flunk "There is another server running on 0.0.0.0:4567. Suspect PIDs: #{suspects(4567).join(", ")}" if listening?("0.0.0.0", 4567)
+      flunk "There is another server running on 0.0.0.0:9292. Suspect PIDs: #{suspects(9292).join(", ")}" if listening?("0.0.0.0", 9292)
 
       Dir.chdir(root("test", "tmp")) do
         FileUtils.rm_rf("monk-test")
@@ -85,27 +76,14 @@ class TestMonk < Test::Unit::TestCase
           sh "redis-server config/redis/development.conf"
           wait_for_service("0.0.0.0", 6379)
 
-          exec("ruby init.rb 2>&1 >/dev/null") if fork.nil?
-          @server_started = wait_for_service("0.0.0.0", 4567)
-
-          doc = Hpricot(sh("curl 0.0.0.0:4567").first)
-
-          assert_match /Hello, world/, doc.at("body").inner_text
-
-          # Make sure all referenced URLs in the layout respond correctly.
-          doc.search("//*[@href]").each do |node|
-            assert_url node.attributes["href"]
-          end
-
-          doc.search("//*[@src]").each do |node|
-            assert_url node.attributes["src"]
-          end
+          test_server "ruby init.rb", 4567
+          test_server "rackup", 9292
         end
       end
     end
 
     teardown do
-      sh "kill #{suspects(4567).join(" ")}" if @server_started
+      sh "kill #{@ports_to_close.map {|p| suspects(p) }.flatten.join(" ")}" unless @ports_to_close.empty?
     end
   end
 
