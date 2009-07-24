@@ -1,28 +1,56 @@
 require "rubygems"
 require "contest"
 require "open3"
+require "socket"
 
 BINARY = File.expand_path(File.join(File.dirname(__FILE__), "..", "bin", "monk"))
 TMP = File.expand_path(File.join(File.dirname(__FILE__), "tmp"))
 
 class TestMonk < Test::Unit::TestCase
-  def monk(args = nil)
+  def sh(cmd)
     out, err = nil
 
-    Open3.popen3("ruby -rubygems #{BINARY} #{args}") do |stdin, stdout, stderr|
-      out = stdout.read
-      err = stderr.read
+    Open3.popen3(cmd) do |_in, _out, _err|
+      out = _out.read
+      err = _err.read
     end
 
     [out, err]
   end
-
-  def sh(cmd)
-    %x{#{cmd}}
+    
+  def monk(args = nil)
+    sh("ruby -rubygems #{BINARY} #{args}")
   end
 
   context "monk init" do
+    def listening?(host, port)
+      begin
+        socket = TCPSocket.new(host, port)
+        socket.close unless socket.nil?
+        true
+      rescue Errno::ECONNREFUSED,
+             Errno::EBADF,           # Windows
+             Errno::EADDRNOTAVAIL    # Windows
+        false
+      end
+    end
+
+    def wait_for_service(host, port, timeout = 5)
+      start_time = Time.now
+
+      until listening?(host, port)
+        if timeout && (Time.now > (start_time + timeout))
+          raise SocketError.new("Socket did not open within #{timeout} seconds")
+        end
+      end
+    end
+
     should "create a skeleton app with all tests passing" do
+      if listening?("0.0.0.0", 4567)
+        suspects = sh("lsof -i :4567").first.split("\n")[1..-1].map {|s| s[/^.+?(\d+)/, 1] }
+        flunk "There is another server running on 0.0.0.0:4567. Suspect PIDs are: #{suspects.join(", ")}"
+      end
+
       Dir.chdir(TMP) do
         FileUtils.rm_rf("monk-test")
 
@@ -33,13 +61,23 @@ class TestMonk < Test::Unit::TestCase
           assert !File.directory?(".git")
 
           FileUtils.cp("config/settings.example.yml", "config/settings.yml")
+          FileUtils.cp("config/redis/development.example.conf", "config/redis/development.conf")
           FileUtils.cp("config/redis/test.example.conf", "config/redis/test.conf")
 
-          assert sh("redis-server config/redis/test.conf")
+          sh "redis-server config/redis/test.conf"
+          wait_for_service("0.0.0.0", 6380)
 
-          sh "dep vendor glue"
+          sh "dep vendor monk-glue"
 
           assert sh("rake")
+
+          sh "redis-server config/redis/development.conf"
+          wait_for_service("0.0.0.0", 6379)
+
+          exec("ruby init.rb 2>&1 >/dev/null") if fork.nil?
+          wait_for_service("0.0.0.0", 4567)
+
+          assert_match /Hello, world/, sh("curl 0.0.0.0:4567").first
         end
       end
     end
