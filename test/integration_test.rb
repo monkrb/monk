@@ -3,9 +3,11 @@ require "contest"
 require "open3"
 require "socket"
 
+ROOT = File.expand_path(File.join(File.dirname(__FILE__), ".."))
+
 class TestMonk < Test::Unit::TestCase
   def root(*args)
-    File.expand_path(File.join(File.dirname(__FILE__), "..", *args))
+    File.join(ROOT, *args)
   end
 
   def sh(cmd)
@@ -52,7 +54,7 @@ class TestMonk < Test::Unit::TestCase
         flunk "There is another server running on 0.0.0.0:4567. Suspect PIDs: #{suspects.join(", ")}"
       end
 
-      Dir.chdir(root("tmp")) do
+      Dir.chdir(root("test", "tmp")) do
         FileUtils.rm_rf("monk-test")
 
         out, err = monk("init monk-test")
