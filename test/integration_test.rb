@@ -47,6 +47,12 @@ class TestMonk < Test::Unit::TestCase
           raise SocketError.new("Socket did not open within #{timeout} seconds")
         end
       end
+
+      true
+    end
+
+    def suspects(port)
+      sh("lsof -i :#{port}").first.split("\n")[1..-1].map {|s| s[/^.+?(\d+)/, 1] }
     end
 
     def assert_url(url)
@@ -54,10 +60,7 @@ class TestMonk < Test::Unit::TestCase
     end
 
     should "create a skeleton app with all tests passing" do
-      if listening?("0.0.0.0", 4567)
-        suspects = sh("lsof -i :4567").first.split("\n")[1..-1].map {|s| s[/^.+?(\d+)/, 1] }
-        flunk "There is another server running on 0.0.0.0:4567. Suspect PIDs: #{suspects.join(", ")}"
-      end
+      flunk "There is another server running on 0.0.0.0:4567. Suspect PIDs: #{suspects(4567).join(", ")}" if listening?("0.0.0.0", 4567)
 
       Dir.chdir(root("test", "tmp")) do
         FileUtils.rm_rf("monk-test")
@@ -83,7 +86,7 @@ class TestMonk < Test::Unit::TestCase
           wait_for_service("0.0.0.0", 6379)
 
           exec("ruby init.rb 2>&1 >/dev/null") if fork.nil?
-          wait_for_service("0.0.0.0", 4567)
+          @server_started = wait_for_service("0.0.0.0", 4567)
 
           doc = Hpricot(sh("curl 0.0.0.0:4567").first)
 
@@ -99,6 +102,10 @@ class TestMonk < Test::Unit::TestCase
           end
         end
       end
+    end
+
+    teardown do
+      sh "kill #{suspects(4567).join(" ")}" if @server_started
     end
   end
 
