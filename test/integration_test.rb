@@ -2,6 +2,7 @@ require "rubygems"
 require "contest"
 require "open3"
 require "socket"
+require "hpricot"
 
 ROOT = File.expand_path(File.join(File.dirname(__FILE__), ".."))
 
@@ -48,6 +49,10 @@ class TestMonk < Test::Unit::TestCase
       end
     end
 
+    def assert_url(url)
+      assert_match /200 OK/, sh("curl -I 0.0.0.0:4567#{url}").first.split("\n").first
+    end
+
     should "create a skeleton app with all tests passing" do
       if listening?("0.0.0.0", 4567)
         suspects = sh("lsof -i :4567").first.split("\n")[1..-1].map {|s| s[/^.+?(\d+)/, 1] }
@@ -80,7 +85,18 @@ class TestMonk < Test::Unit::TestCase
           exec("ruby init.rb 2>&1 >/dev/null") if fork.nil?
           wait_for_service("0.0.0.0", 4567)
 
-          assert_match /Hello, world/, sh("curl 0.0.0.0:4567").first
+          doc = Hpricot(sh("curl 0.0.0.0:4567").first)
+
+          assert_match /Hello, world/, doc.at("body").inner_text
+
+          # Make sure all referenced URLs in the layout respond correctly.
+          doc.search("//*[@href]").each do |node|
+            assert_url node.attributes["href"]
+          end
+
+          doc.search("//*[@src]").each do |node|
+            assert_url node.attributes["src"]
+          end
         end
       end
     end
