@@ -33,12 +33,12 @@ module Test::Commands
     end
   end
 
-  def wait_for_service(host, port, timeout = 5)
+  def wait_for_service(host, port, timeout = 3)
     start_time = Time.now
 
     until listening?(host, port)
       if timeout && (Time.now > (start_time + timeout))
-        raise SocketError.new("Socket did not open within #{timeout} seconds")
+        raise SocketError.new("Socket #{host}:#{port} did not open within #{timeout} seconds")
       end
     end
 

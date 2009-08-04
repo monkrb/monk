@@ -15,5 +15,5 @@ Gem::Specification.new do |s|
   s.add_dependency("dependencies", ">= 0.0.5")
   s.requirements << "git"
 
-  s.files = ["LICENSE", "README.markdown", "Rakefile", "bin/monk", "lib/monk.rb", "monk.gemspec", "test/integration_test.rb"]
+  s.files = ["LICENSE", "README.markdown", "Rakefile", "bin/monk", "lib/monk.rb", "monk.gemspec", "test/commands.rb", "test/integration_test.rb"]
 end

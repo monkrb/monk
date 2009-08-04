@@ -19,7 +19,7 @@ class TestMonk < Test::Unit::TestCase
     sh("ruby -rubygems #{root "bin/monk"} #{args}")
   end
 
-  context "monk init" do
+  context "monk init NAME" do
     setup do
       @ports_to_close = []
     end
@@ -61,7 +61,7 @@ class TestMonk < Test::Unit::TestCase
         FileUtils.rm_rf("monk-test")
 
         out, err = monk("init monk-test")
-        assert_match /create.* monk-test/, out
+        assert_match /initialized.* monk-test/, out
 
         Dir.chdir("monk-test") do
           assert !File.directory?(".git")
@@ -119,6 +119,34 @@ class TestMonk < Test::Unit::TestCase
     teardown do
       @ports_to_close.each do |port|
         kill_suspects port
+      end
+    end
+  end
+
+  context "monk init" do
+    should "fail if the current working directory is not empty" do
+      Dir.chdir(root("test", "tmp")) do
+        FileUtils.rm_rf("monk-test")
+        FileUtils.mkdir("monk-test")
+
+
+        Dir.chdir("monk-test") do
+          FileUtils.touch("foobar")
+          out, err = monk("init")
+          assert_match /error/, out
+        end
+      end
+    end
+
+    should "create a skeleton app in the working directory" do
+      Dir.chdir(root("test", "tmp")) do
+        FileUtils.rm_rf("monk-test")
+        FileUtils.mkdir("monk-test")
+
+        Dir.chdir("monk-test") do
+          out, err = monk("init")
+          assert_match /initialized/, out
+        end
       end
     end
   end

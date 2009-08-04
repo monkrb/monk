@@ -6,9 +6,10 @@ class Monk < Thor
   include Thor::Actions
 
   desc "init", "Initialize a Monk application"
-  def init(target)
-    clone(source, target)
-    cleanup(target)
+  def init(target = ".")
+    clone(source, target) ?
+      cleanup(target) :
+      say_status(:error, clone_error(target))
   end
 
   desc "show NAME", "Display the repository address for NAME"
@@ -40,11 +41,12 @@ private
   def clone(source, target)
     say_status :fetching, source
     system "git clone -q --depth 1 #{source} #{target}"
+    $?.success?
   end
 
   def cleanup(target)
     inside(target) { remove_file ".git" }
-    say_status :create, target
+    say_status :initialized, target
   end
 
   def source(name = "default")
@@ -72,5 +74,10 @@ private
 
   def self.source_root
     "."
+  end
+
+  def clone_error(target)
+    "Couldn't clone repository into target directory '#{target}'. " +
+    "You must have git installed and the target directory must be empty."
   end
 end
