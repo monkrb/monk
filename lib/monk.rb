@@ -6,8 +6,9 @@ class Monk < Thor
   include Thor::Actions
 
   desc "init", "Initialize a Monk application"
+  method_options(:source => :string)
   def init(target = ".")
-    clone(source, target) ?
+    clone(source(options[:source] || "default"), target) ?
       cleanup(target) :
       say_status(:error, clone_error(target))
   end
@@ -39,9 +40,11 @@ class Monk < Thor
 private
 
   def clone(source, target)
-    say_status :fetching, source
-    system "git clone -q --depth 1 #{source} #{target}"
-    $?.success?
+    if Dir["#{target}/*"].empty?
+      say_status :fetching, source
+      system "git clone -q --depth 1 #{source} #{target}"
+      $?.success?
+    end
   end
 
   def cleanup(target)
