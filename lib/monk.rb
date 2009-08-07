@@ -6,9 +6,9 @@ class Monk < Thor
   include Thor::Actions
 
   desc "init", "Initialize a Monk application"
-  method_options(:source => :string)
+  method_option :skeleton, :type => :string, :aliases => "-s"
   def init(target = ".")
-    clone(source(options[:source] || "default"), target) ?
+    clone(source(options[:skeleton] || "default"), target) ?
       cleanup(target) :
       say_status(:error, clone_error(target))
   end

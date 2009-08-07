@@ -79,7 +79,7 @@ class TestMonk < Test::Unit::TestCase
         monk("add foobar git://github.com/monkrb/skeleton.git")
 
         Dir.chdir("monk-test") do
-          out, err = monk("init -s foo")
+          out, err = monk("init -s foobar")
           assert_match /initialized/, out
         end
       end
@@ -113,6 +113,32 @@ class TestMonk < Test::Unit::TestCase
       assert out["foobar"]
       assert out["git://github.com/monkrb/foo.git"]
       monk("rm foobar")
+    end
+
+    should "allow to fetch from the added repository when using the skeleton parameter" do
+      monk("add glue git://github.com/monkrb/glue.git")
+
+      Dir.chdir(root("test", "tmp")) do
+        FileUtils.rm_rf("monk-test")
+        FileUtils.mkdir("monk-test")
+
+        out, err = monk("init monk-test --skeleton glue")
+        assert_match /initialized/, out
+        assert_match /glue.git/, out
+      end
+    end
+
+    should "allow to fetch from the added repository when using the s parameter" do
+      monk("add glue git://github.com/monkrb/glue.git")
+
+      Dir.chdir(root("test", "tmp")) do
+        FileUtils.rm_rf("monk-test")
+        FileUtils.mkdir("monk-test")
+
+        out, err = monk("init monk-test -s glue")
+        assert_match /initialized/, out
+        assert_match /glue.git/, out
+      end
     end
   end
 
