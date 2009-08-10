@@ -96,6 +96,11 @@ class TestMonk < Test::Unit::TestCase
         sleep 0.2
         assert_match /Goodbye/, sh("curl 0.0.0.0:4567").first
       end
+
+      gsub_file("init.rb", "Main.run!", %Q(Main.get "/test" { 'test' }\n Main.run!)) do
+        sleep 0.2
+        assert_match /test/, sh("curl 0.0.0.0:4567/test").first
+      end
     end
 
     def gsub_file(file, *args)

@@ -13,11 +13,18 @@ module Test::Commands
     [out, err]
   end
 
+  # Runs a command in the background, silencing all output.
+  # For debugging purposes, set the environment variable VERBOSE.
   def sh_bg(cmd)
-    silence_stream($stdout) do
-      silence_stream($stderr) do
-        (pid = fork) ? Process.detach(pid) : exec("#{cmd} 2>&1>/dev/null")
-      end
+    if ENV["VERBOSE"]
+      streams_to_silence = []
+    else
+      streams_to_silence = [$stdout, $stderr]
+      cmd = "#{cmd} 2>&1>/dev/null"
+    end
+
+    silence_stream(*streams_to_silence) do
+      (pid = fork) ? Process.detach(pid) : exec(cmd)
     end
   end
 
@@ -50,12 +57,16 @@ module Test::Commands
     list.map {|s| s[/^.+? (\d+)/, 1] }
   end
 
-  def silence_stream(stream)
-    old_stream = stream.dup
-    stream.reopen(RUBY_PLATFORM =~ /mswin/ ? 'NUL:' : '/dev/null')
-    stream.sync = true
+  def silence_stream(*streams) #:yeild:
+    on_hold = streams.collect{ |stream| stream.dup }
+    streams.each do |stream|
+      stream.reopen(RUBY_PLATFORM =~ /mswin/ ? 'NUL:' : '/dev/null')
+      stream.sync = true
+    end
     yield
   ensure
-    stream.reopen(old_stream)
+    streams.each_with_index do |stream, i|
+      stream.reopen(on_hold[i])
+    end
   end
 end
