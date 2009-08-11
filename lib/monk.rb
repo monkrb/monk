@@ -57,7 +57,7 @@ private
   end
 
   def monk_config_file
-    @monk_config_file ||= File.join(Thor::Util.user_home, ".monk")
+    @monk_config_file ||= File.join(monk_home, ".monk")
   end
 
   def monk_config
@@ -82,5 +82,9 @@ private
   def clone_error(target)
     "Couldn't clone repository into target directory '#{target}'. " +
     "You must have git installed and the target directory must be empty."
+  end
+
+  def monk_home
+    ENV["MONK_HOME"] || File.join(Thor::Util.user_home)
   end
 end

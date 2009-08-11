@@ -1,24 +1,6 @@
-require "rubygems"
-require "contest"
-require "hpricot"
-
-ROOT = File.expand_path(File.join(File.dirname(__FILE__), ".."))
-
-$:.unshift ROOT
-
-require "test/commands"
+require File.join(File.dirname(__FILE__), "test_helper")
 
 class TestMonk < Test::Unit::TestCase
-  include Test::Commands
-
-  def root(*args)
-    File.join(ROOT, *args)
-  end
-
-  def monk(args = nil)
-    sh("ruby -rubygems #{root "bin/monk"} #{args}")
-  end
-
   context "monk init NAME" do
     setup do
       @ports_to_close = []
