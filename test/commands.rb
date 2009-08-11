@@ -20,12 +20,16 @@ module Test::Commands
       streams_to_silence = []
     else
       streams_to_silence = [$stdout, $stderr]
-      cmd = "#{cmd} 2>&1>/dev/null"
+      # cmd = "#{cmd} 2>&1>/dev/null"
     end
+
+    pid = nil
 
     silence_stream(*streams_to_silence) do
       (pid = fork) ? Process.detach(pid) : exec(cmd)
     end
+
+    pid
   end
 
   def listening?(host, port)
