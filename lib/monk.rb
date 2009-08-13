@@ -1,6 +1,7 @@
 #! /usr/bin/env ruby
 
 require "thor"
+require "yaml"
 
 class Monk < Thor
   include Thor::Actions
