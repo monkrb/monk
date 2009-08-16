@@ -59,8 +59,8 @@ class TestMonk < Test::Unit::TestCase
           sh "redis-server config/redis/development.conf"
           wait_for_service("0.0.0.0", 6379)
 
-          assert sh("rake"), "the build didn't pass."
-          assert sh("rake1.9"), "the build didn't pass under Ruby 1.9."
+          assert system("rake >/dev/null"), "the build didn't pass"
+          assert system("rake1.9 >/dev/null"), "the build didn't pass (1.9)"
 
           try_server "ruby init.rb", 4567
           try_reloading
