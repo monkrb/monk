@@ -15,6 +15,10 @@ class Test::Unit::TestCase
     File.join(ROOT, *args)
   end
 
+  def setup
+    FileUtils.rm(File.join(ROOT, "test", "tmp", ".monk"))
+  end
+
   def monk(args = nil)
     sh("env MONK_HOME=#{File.join(ROOT, "test", "tmp")} ruby -rubygems #{root "bin/monk"} #{args}")
   end
