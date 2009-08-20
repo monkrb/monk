@@ -69,6 +69,9 @@ class TestMonk < Test::Unit::TestCase
           try_server "ruby1.9 init.rb", 4567
           try_reloading
           try_server "rackup1.9", 9292
+
+          try_server "jruby init.rb", 4567
+          try_reloading
         end
       end
     end
