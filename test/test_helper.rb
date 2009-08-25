@@ -16,7 +16,9 @@ class Test::Unit::TestCase
   end
 
   def setup
-    FileUtils.rm(File.join(ROOT, "test", "tmp", ".monk"))
+    dot_monk = File.join(ROOT, "test", "tmp", ".monk")
+
+    FileUtils.rm(dot_monk) if File.exist?(dot_monk)
   end
 
   def monk(args = nil)
