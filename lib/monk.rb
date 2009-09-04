@@ -64,7 +64,7 @@ private
   def monk_config
     @monk_config ||= begin
       write_monk_config_file unless File.exists?(monk_config_file)
-      @monk_config = YAML.load_file(monk_config_file)
+      YAML.load_file(monk_config_file)
     end
   end
 
