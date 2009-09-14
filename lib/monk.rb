@@ -73,8 +73,8 @@ private
   end
 
   def write_monk_config_file
-    remove_file monk_config_file
-    create_file monk_config_file do
+    remove_file(monk_config_file, :verbose => false)
+    create_file(monk_config_file, nil, :verbose => false) do
       config = @monk_config || { "default" => "git://github.com/monkrb/skeleton.git" }
       config.to_yaml
     end
