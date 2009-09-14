@@ -1,6 +1,7 @@
 require "rubygems"
 require "contest"
 require "hpricot"
+require "fileutils"
 
 ROOT = File.expand_path(File.join(File.dirname(__FILE__), ".."))
 

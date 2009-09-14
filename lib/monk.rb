@@ -6,6 +6,10 @@ require "yaml"
 class Monk < Thor
   include Thor::Actions
 
+  [:skip, :pretend, :force, :quiet].each do |task|
+    class_options.delete task
+  end
+
   desc "init", "Initialize a Monk application"
   method_option :skeleton, :type => :string, :aliases => "-s"
   def init(target = ".")
