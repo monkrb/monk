@@ -24,6 +24,14 @@ class TestMonk < Test::Unit::TestCase
         assert_match /initialized.* monk-test/, out
       end
     end
+
+    should "be able to pull from a url instead of a known skeleton" do
+      Dir.chdir(root("test", "tmp")) do
+        FileUtils.rm_rf "monk-test"
+        out, err = monk("init monk-test --skeleton git://github.com/monkrb/skeleton.git")
+        assert_match /initialized.* monk-test/, out
+      end
+    end
   end
 
   context "monk init" do

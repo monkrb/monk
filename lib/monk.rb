@@ -13,7 +13,7 @@ class Monk < Thor
   desc "init", "Initialize a Monk application"
   method_option :skeleton, :type => :string, :aliases => "-s"
   def init(target = ".")
-    clone(source(options[:skeleton] || "default"), target) ?
+    clone(source(options[:skeleton] || "default") || options[:skeleton], target) ?
       cleanup(target) :
       say_status(:error, clone_error(target))
   end
