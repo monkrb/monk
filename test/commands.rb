@@ -1,7 +1,7 @@
 require "open3"
 require "socket"
 
-module Test::Commands
+module Commands
   def sh(cmd)
     out, err = nil
 
